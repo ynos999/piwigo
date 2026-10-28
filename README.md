@@ -9,7 +9,7 @@ db_user_password=
 timezone=
 PIWIGO_UID=1000
 PIWIGO_GID=1000
-# If use cloudflare tunnel
+#### If use cloudflare tunnel
 CF_TUNNEL_TOKEN=
 
 3. #### Nginx config file nginx.conf is for cloudflare tunnel.
