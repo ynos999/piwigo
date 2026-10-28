@@ -1,0 +1,75 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.4
+    container_name: cloudflare-tunnel
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    # With tokenu ingress (hostname -> http://nginx:80) add to Cloudflare Zero Trust panel
+    command: tunnel --no-autoupdate run --protocol http2
+    depends_on:
+      - nginx
+    networks:
+      - piwigo-network
+
+  nginx:
+    build: ./nginx
+    container_name: piwigo-nginx
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "14"
+    ports:
+      # Only locally; public access goes through Cloudflare tunnel
+      - "127.0.0.1:${piwigo_port}:80"
+    depends_on:
+      - piwigo
+    networks:
+      - piwigo-network
+
+  piwigo:
+    image: piwigo/piwigo:16.4
+    container_name: piwigo
+    restart: always
+    environment:
+      - TZ=${timezone}
+      - PIWIGO_UID=${PIWIGO_UID}
+      - PIWIGO_GID=${PIWIGO_GID}
+    networks:
+      - piwigo-network
+
+    depends_on:
+      - piwigo-db
+    volumes:
+      - ./piwigo-data/piwigo:/var/www/html/piwigo/
+      - ./piwigo-data/scripts:/usr/local/bin/scripts/
+      - ./piwigo-data/php-custom.ini:/usr/local/etc/php/conf.d/99-custom.ini:ro
+
+  piwigo-db:
+    image: mariadb:13.0.2
+    container_name: piwigo-db
+    restart: always
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=true
+      - MARIADB_USER=piwigo_user
+      - MARIADB_DATABASE=piwigo_database
+      - MARIADB_PASSWORD=${db_user_password}
+      - TZ=${timezone}
+    networks:
+      - piwigo-network
+    volumes:
+      # - ./piwigo-data/mysql:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+
+networks:
+  piwigo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  mysql_data:
