@@ -40,4 +40,4 @@ docker compose down -v
 ### Up docker compose with cloudflare tunnel:
 docker copmopse up -d
 
-#### Folder initdb copy your piwigo-backup.sql and use "docker compose down -v" and "docker compose up -d"
+#### If migrate server - Folder initdb copy your piwigo-backup.sql and use "docker compose down -v" and "docker compose up -d"
